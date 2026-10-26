@@ -23,7 +23,7 @@ export interface StudentRecord {
   id: string;
   rollNumber: string;
   maskedApaarId: string;
-  unmaskedApaarId: string; // Synthetic only, e.g. "AP-8392-1049-8921"
+  unmaskedApaarId: string; // Synthetic placeholder only, e.g. "APAAR-SYN-0001"
   fullName: StudentField<string>;
   dateOfBirth: StudentField<string>; // YYYY-MM-DD
   program: StudentField<string>;

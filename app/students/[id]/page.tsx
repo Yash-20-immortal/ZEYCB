@@ -16,6 +16,7 @@ import {
   GraduationCap,
   ChevronRight,
   ArrowRight,
+  Printer,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatDate, formatTimeAgo } from '@/lib/utils';
@@ -48,7 +49,16 @@ export default function StudentDetailPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
-      {/* Scope notice if Dept Head views non-CSE student */}
+      {/* Breadcrumb Context */}
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <Link href="/dashboard" className="hover:text-slate-900 transition-colors">
+          Registry Dashboard
+        </Link>
+        <span>/</span>
+        <span className="text-slate-700">Student Records</span>
+        <span>/</span>
+        <span className="font-semibold text-slate-900">{student.fullName.value} ({student.rollNumber})</span>
+      </div>
       {isDeptHead && student.department !== 'Computer Science & Engineering' && (
         <div className="p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fade-in">
           <span>
@@ -88,6 +98,15 @@ export default function StudentDetailPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            id="btn-open-review-brief"
+            href={`/students/${student.id}/brief`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium text-xs transition-colors shadow-xs"
+            title="Open printable review brief for this student"
+          >
+            <Printer className="w-3.5 h-3.5 text-slate-500" />
+            <span>Review Brief</span>
+          </Link>
           {hasMismatch ? (
             <Link
               href="/workbench"
@@ -96,6 +115,10 @@ export default function StudentDetailPage() {
               <GitCompare className="w-3.5 h-3.5" />
               <span>{isAuditor ? 'Inspect in Workbench' : 'Resolve in Workbench'}</span>
             </Link>
+          ) : student.status === 'pending_sync' ? (
+            <span className="px-3 py-1.5 rounded-md bg-sky-50 text-sky-800 border border-sky-200 text-xs font-medium">
+              Evidence Sync Pending
+            </span>
           ) : isRegistrar ? (
             <button
               onClick={() => setShowProofModal(true)}
@@ -125,11 +148,22 @@ export default function StudentDetailPage() {
                   <span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
                     Discrepancy Flagged
                   </span>
+                ) : student.status === 'pending_sync' ? (
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-sky-50 text-sky-800 border border-sky-200">
+                    Pending Sync ({student.readinessScore}% Evidence Pending)
+                  </span>
+                ) : student.status === 'proof_issued' ? (
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-cobalt-50 text-cobalt-700 border border-cobalt-200">
+                    Proof Active ({student.readinessScore}% Verified)
+                  </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Readiness: {student.readinessScore}% Verified
+                    Ready ({student.readinessScore}% Verified)
                   </span>
                 )}
+                <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                  Synthetic Demo Record
+                </span>
               </div>
 
               <p className="text-xs text-slate-600">
@@ -139,7 +173,7 @@ export default function StudentDetailPage() {
               {/* Masked Identifier Display */}
               <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
                 <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200">
-                  <span className="text-slate-500 font-medium">APAAR ID:</span>
+                  <span className="text-slate-500 font-medium">Synthetic APAAR:</span>
                   <span className="font-mono text-slate-900 font-semibold">
                     {isUnmasked ? student.unmaskedApaarId : student.maskedApaarId}
                   </span>
@@ -164,7 +198,7 @@ export default function StudentDetailPage() {
                 </div>
 
                 <span className="text-slate-400 text-[11px]">
-                  {isUnmasked ? 'Raw synthetic value exposed (Logged in audit)' : 'Masked under privacy minimization policy'}
+                  {isUnmasked ? 'Raw synthetic placeholder exposed (Logged in audit)' : 'Masked under privacy minimization policy (Synthetic Demo)'}
                 </span>
               </div>
             </div>

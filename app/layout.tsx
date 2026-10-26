@@ -5,9 +5,9 @@ import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { Navbar } from '@/components/Navbar';
 
 export const metadata: Metadata = {
-  title: 'Zeycb — APAAR-ID Student Data & Verification Platform',
+  title: 'Zeycb — AICTE Student Credential Provenance & Proof Pass Registry',
   description:
-    'Records that prove themselves. SIH26263 Prototype for AICTE institutions: record readiness, mismatch provenance, and selective Proof Pass verification.',
+    'Records that prove themselves. SIH26263 Research Platform for AICTE institutions: multi-source provenance, explicit human reconciliation, and student-authorized selective disclosure Proof Passes.',
 };
 
 export default function RootLayout({

@@ -1,526 +1,429 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import {
   Shield,
+  ArrowRight,
+  Database,
   AlertTriangle,
-  QrCode,
-  Search,
+  UserCheck,
   CheckCircle2,
-  ChevronRight,
-  TrendingUp,
+  Lock,
+  EyeOff,
+  Building2,
   GraduationCap,
   History,
-  ArrowRight,
+  QrCode,
   Sparkles,
+  ExternalLink,
+  GitCompare,
+  KeyRound,
+  FileText,
+  Ban,
+  Fingerprint,
+  LogIn,
 } from 'lucide-react';
-import { useStore } from '@/lib/store';
-import { StudentRecord } from '@/lib/types';
-import { formatTimeAgo } from '@/lib/utils';
-import { ProofPassModal } from '@/components/ProofPassModal';
+import { ZeycbLogo } from '@/components/ZeycbLogo';
+import { ZeycbAtlasHero } from '@/components/ZeycbAtlasHero';
+import { TrustTraceSuite } from '@/components/TrustTraceSuite';
 
-export default function DashboardPage() {
-  const { institution, students, proofPasses, auditEvents, activeRole } = useStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterTab, setFilterTab] = useState<'all' | 'action_required' | 'verified' | 'proof_issued'>('all');
-  const [selectedStudentForPass, setSelectedStudentForPass] = useState<StudentRecord | null>(null);
-
-  const isDeptHead = activeRole === 'Department Academic Head';
-  const isAuditor = activeRole === 'Auditor / Compliance Inspector';
-  const isRegistrar = activeRole === 'Registrar Office (Staff #RO-402)';
-
-  // Scope students if Department Academic Head (scoped to Computer Science & Engineering)
-  const scopedStudents = isDeptHead
-    ? students.filter((s) => s.department === 'Computer Science & Engineering')
-    : students;
-
-  // Compute stats
-  const totalStudents = scopedStudents.length;
-  const unresolvedMismatches = scopedStudents.filter(
-    (s) => s.seededMismatch && !s.seededMismatch.resolved
-  );
-  const verifiedCount = scopedStudents.filter((s) => s.status === 'verified').length;
-  const proofIssuedCount = isDeptHead ? 0 : proofPasses.filter((p) => !p.isRevoked).length;
-  const avgReadiness = Math.round(
-    scopedStudents.reduce((acc, s) => acc + s.readinessScore, 0) / (totalStudents || 1)
-  );
-
-  // Filter students
-  const filteredStudents = scopedStudents.filter((s) => {
-    const matchesSearch =
-      s.fullName.value.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.rollNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.maskedApaarId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.department.toLowerCase().includes(searchQuery.toLowerCase());
-
-    if (!matchesSearch) return false;
-    if (filterTab === 'all') return true;
-    return s.status === filterTab;
-  });
+export default function LandingPage() {
+  const fiveAudiences = [
+    {
+      roleTitle: 'Students',
+      persona: 'Priya Sharma (B.Tech CSE, Sem 6)',
+      icon: GraduationCap,
+      iconColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+      jobSummary:
+        'Review institutional provenance, inspect conflicting intake feeds, and choose what fields third parties can verify.',
+      actionDetail:
+        'Students view what the university has on file, confirm how discrepancies were resolved, and configure selective disclosure Proof Passes for prospective employers.',
+      route: '/students/stu-001',
+      buttonText: 'Student Record View',
+    },
+    {
+      roleTitle: 'Registrar Office',
+      persona: 'Dr. Anirudh Sen (Deputy Registrar, #RO-402)',
+      icon: Building2,
+      iconColor: 'text-cobalt-700 bg-cobalt-50 border-cobalt-200',
+      jobSummary:
+        'Cross-examine multi-source intake discrepancies, link physical ledger evidence, and issue/revoke Proof Passes.',
+      actionDetail:
+        'Institutional ledger authority. When external feeds disagree on names or birth years, registrars inspect physical files and establish authoritative legal identity.',
+      route: '/dashboard',
+      buttonText: 'Institutional Registry',
+      highlight: true,
+    },
+    {
+      roleTitle: 'Department Heads',
+      persona: 'Prof. Rajesh Verma (Head, Computer Science)',
+      icon: UserCheck,
+      iconColor: 'text-indigo-700 bg-indigo-50 border-indigo-200',
+      jobSummary:
+        'Monitor department-scoped cohort graduation readiness and curriculum credit completion blockers.',
+      actionDetail:
+        'Department heads review course variances and graduation credit tallies for their department cohort. Strictly prohibited from issuing or revoking registrar passes.',
+      route: '/dashboard',
+      buttonText: 'Department Scope',
+    },
+    {
+      roleTitle: 'Compliance Auditors',
+      persona: 'State Higher-Ed Compliance Division',
+      icon: History,
+      iconColor: 'text-amber-800 bg-amber-50 border-amber-200',
+      jobSummary:
+        'Inspect chronological institutional event logs, verify unmask justification validity, and review audit trail.',
+      actionDetail:
+        'Independent oversight. Auditors inspect who accessed records, when staff unmasked identifiers, and review physical evidence references in read-only mode.',
+      route: '/audit',
+      buttonText: 'Audit Event Stream',
+    },
+    {
+      roleTitle: 'Employers & Verifiers',
+      persona: 'TCS Talent Gateway / Screening Agencies',
+      icon: QrCode,
+      iconColor: 'text-slate-800 bg-slate-100 border-slate-300',
+      jobSummary:
+        'Authenticate student-authorized academic credentials via Proof Pass tokens with zero unneeded PII exposed.',
+      actionDetail:
+        'Recruiters verify degree standing, CGPA, and AICTE accreditation without collecting, handling, or storing sensitive birth dates, Aadhaar, or national ID numbers.',
+      route: '/verify/proof-nitas-9a4f2e',
+      buttonText: 'Live Proof Verifier',
+    },
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-      {/* Editorial Header */}
-      <div className="border-b border-slate-200 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mb-1.5">
-            <span className="font-semibold text-slate-700">
-              {isDeptHead
-                ? 'Department of Computer Science & Engineering (Head Review Scope)'
-                : isAuditor
-                ? 'Institutional Compliance & Audit Scope (Read-Only)'
-                : 'AICTE Northern Region Scope (Fictional Prototype)'}
-            </span>
+    <div className="space-y-16 sm:space-y-24 pb-20 pt-4">
+      {/* ========================================================================= */}
+      {/* 1. HERO SECTION: 2-COLUMN DESKTOP (PROMINENT ATLAS ABOVE THE FOLD)        */}
+      {/* ========================================================================= */}
+      <section id="overview" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Top Context Breadcrumb */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 border-b border-slate-200/80 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-900">Zeycb Institutional Registry</span>
             <span>•</span>
-            <span className="font-mono">ID: {institution.aictePermanentId}</span>
+            <span className="font-mono text-slate-600">AICTE ID: 1-94827104</span>
             <span>•</span>
-            <span>{institution.naacGrade}</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 font-serif">
-            {isDeptHead
-              ? `${institution.name} — Computer Science & Engineering`
-              : institution.name}
-          </h1>
-          <p className="text-sm text-slate-600 mt-1 max-w-3xl">
-            {isDeptHead
-              ? 'Departmental student record readiness, academic progress review, and source discrepancy cross-examination.'
-              : isAuditor
-              ? 'Read-only institutional audit review of student cohorts, provenance evidence, and verified readiness.'
-              : 'Student record readiness, provenance cross-examination, and selective Proof Pass issuance platform.'}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 shrink-0">
-          <Link
-            href="/workbench"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors shadow-sm"
-          >
-            <span>Mismatch Workbench</span>
-            {unresolvedMismatches.length > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[11px] bg-amber-400 text-slate-950 font-bold">
-                {unresolvedMismatches.length}
-              </span>
-            )}
-          </Link>
-          {isRegistrar && (
-            <Link
-              href="/passes"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium transition-colors shadow-sm"
-            >
-              <QrCode className="w-3.5 h-3.5 text-slate-500" />
-              <span>Active Proof Passes</span>
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* Urgent Discrepancy Alert (Restrained Amber) */}
-      {unresolvedMismatches.length > 0 && (
-        <div className="p-4 rounded-lg bg-amber-50/90 border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-            <div>
-              <h2 className="text-sm font-semibold text-amber-900">
-                1 High-Priority Source Discrepancy Pending Staff Review
-              </h2>
-              <p className="text-xs text-amber-800/90 mt-0.5 leading-relaxed">
-                <strong>Priya Sharma (Roll: 2022-CSE-084)</strong> has conflicting birth year and name spelling between Institute Admission ERP (15-Aug-2004) and simulated ABC Feed (15-Aug-2003). Automated credential issuance is held.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/workbench"
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md bg-amber-700 hover:bg-amber-800 text-white text-xs font-medium shrink-0 transition-colors shadow-sm"
-          >
-            <span>Investigate Conflict</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      )}
-
-      {/* Metric Cards (Clean White with hairline borders) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1 */}
-        <div className="p-5 rounded-lg bg-white border border-slate-200 shadow-subtle">
-          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Record Readiness Index
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {avgReadiness}%
-            </span>
-            <span className="text-xs font-medium text-slate-500">
-              Cohort composite
+            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold border border-slate-200 text-[10px]">
+              SIH26263 Research Demo
             </span>
           </div>
-          <div className="mt-3 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-            <div
-              className={`h-full transition-all duration-300 ${
-                avgReadiness >= 90 ? 'bg-cobalt-600' : 'bg-amber-500'
-              }`}
-              style={{ width: `${avgReadiness}%` }}
-            />
+
+          <div className="hidden sm:flex items-center gap-2 text-[11px] text-slate-500">
+            <span>Synthetic Evaluation Dataset</span>
+            <span>•</span>
+            <span className="text-emerald-700 font-medium">Human-in-the-Loop Governance</span>
           </div>
-          <p className="mt-2.5 text-xs text-slate-500">
-            {unresolvedMismatches.length === 0
-              ? 'All 4 records reconciled'
-              : `${unresolvedMismatches.length} record holds back 100% readiness`}
-          </p>
         </div>
 
-        {/* Card 2 */}
-        <div className="p-5 rounded-lg bg-white border border-slate-200 shadow-subtle">
-          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Pending Conflicts
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {unresolvedMismatches.length}
-            </span>
-            <span
-              className={`text-xs font-semibold ${
-                unresolvedMismatches.length > 0 ? 'text-amber-700' : 'text-emerald-700'
-              }`}
-            >
-              {unresolvedMismatches.length > 0 ? 'Staff review required' : 'Zero flags'}
-            </span>
-          </div>
-          <p className="mt-5 text-xs text-slate-500">
-            {unresolvedMismatches.length > 0
-              ? 'Human-in-the-loop review mandatory'
-              : 'All ingest feeds aligned'}
-          </p>
-        </div>
-
-        {/* Card 3 */}
-        <div className="p-5 rounded-lg bg-white border border-slate-200 shadow-subtle">
-          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            {isDeptHead ? 'Credential Proofs' : 'Active Proof Passes'}
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            {isDeptHead ? (
-              <span className="text-xl font-bold tracking-tight text-slate-800">
-                Registrar Scope
-              </span>
-            ) : (
-              <>
-                <span className="text-3xl font-bold tracking-tight text-slate-900">
-                  {proofIssuedCount}
-                </span>
-                <span className="text-xs font-medium text-cobalt-700">
-                  Time-limited tokens
-                </span>
-              </>
-            )}
-          </div>
-          <p className="mt-5 text-xs text-slate-500">
-            {isDeptHead
-              ? 'Proof Pass issuance restricted to Registrar Office'
-              : 'Shared with external evaluators'}
-          </p>
-        </div>
-
-        {/* Card 4 */}
-        <div className="p-5 rounded-lg bg-white border border-slate-200 shadow-subtle">
-          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Verified Eligible Cohort
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold tracking-tight text-slate-900">
-              {verifiedCount + proofIssuedCount} / {totalStudents}
-            </span>
-            <span className="text-xs font-medium text-emerald-700">
-              Ready for proof
-            </span>
-          </div>
-          <p className="mt-5 text-xs text-slate-500">
-            Reconciled against Admission SIS
-          </p>
-        </div>
-      </div>
-
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left Column: Student Cohort Roster (2 Cols) */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-slate-500" />
-                {isDeptHead
-                  ? 'Computer Science & Engineering Monitored Cohort'
-                  : 'Monitored Cohort Roster'}
-              </h2>
-              <p className="text-xs text-slate-500">
-                {isDeptHead
-                  ? 'Academic Year 2024–25 Departmental Records'
-                  : 'Academic Year 2024–25 Synthetic Cohort'}
-              </p>
+        {/* 2-Column Hero Grid (Prominent Atlas visible without scrolling on desktop) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-1">
+          {/* Left Column: Editorial Headline & Actions (5 cols) */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-800">
+              <Shield className="w-3.5 h-3.5 text-cobalt-600" />
+              <span>Provable Academic Provenance</span>
             </div>
 
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-md text-xs">
-              <button
-                onClick={() => setFilterTab('all')}
-                className={`px-2.5 py-1 rounded transition-colors ${
-                  filterTab === 'all'
-                    ? 'bg-white text-slate-900 font-semibold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                All ({scopedStudents.length})
-              </button>
-              <button
-                onClick={() => setFilterTab('action_required')}
-                className={`px-2.5 py-1 rounded transition-colors flex items-center gap-1 ${
-                  filterTab === 'action_required'
-                    ? 'bg-white text-amber-900 font-semibold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Flagged ({unresolvedMismatches.length})
-              </button>
-              <button
-                onClick={() => setFilterTab('verified')}
-                className={`px-2.5 py-1 rounded transition-colors ${
-                  filterTab === 'verified'
-                    ? 'bg-white text-slate-900 font-semibold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Ready
-              </button>
-              <button
-                onClick={() => setFilterTab('proof_issued')}
-                className={`px-2.5 py-1 rounded transition-colors ${
-                  filterTab === 'proof_issued'
-                    ? 'bg-white text-slate-900 font-semibold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Proof Active
-              </button>
-            </div>
-          </div>
+            <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-extrabold tracking-tight text-slate-950 font-serif leading-[1.15]">
+              Student credentials with documented record history and student-controlled privacy.
+            </h1>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by student name, roll number, or department..."
-              className="w-full bg-white border border-slate-200 rounded-md pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-cobalt-500 focus:border-cobalt-500 shadow-xs"
-            />
-          </div>
-
-          {/* Clean Student Roster Cards */}
-          <div className="bg-white border border-slate-200 rounded-lg divide-y divide-slate-100 shadow-subtle overflow-hidden">
-            {filteredStudents.map((student) => {
-              const hasMismatch = student.seededMismatch && !student.seededMismatch.resolved;
-              return (
-                <div
-                  key={student.id}
-                  className={`p-4 transition-colors ${
-                    hasMismatch ? 'bg-amber-50/30 hover:bg-amber-50/50' : 'hover:bg-slate-50/60'
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/students/${student.id}`}
-                          className="font-semibold text-slate-900 text-sm hover:text-cobalt-600 transition-colors"
-                        >
-                          {student.fullName.value}
-                        </Link>
-                        <span className="text-xs text-slate-500 font-mono">
-                          ({student.rollNumber})
-                        </span>
-                        {hasMismatch ? (
-                          <span className="px-2 py-0.2 rounded text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                            Action Required
-                          </span>
-                        ) : student.status === 'proof_issued' ? (
-                          <span className="px-2 py-0.2 rounded text-[11px] font-medium bg-cobalt-50 text-cobalt-700 border border-cobalt-200">
-                            Proof Active
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.2 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Verified
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
-                        <span>{student.department}</span>
-                        <span>•</span>
-                        <span>Sem {student.currentSemester.value}</span>
-                        <span>•</span>
-                        <span className="font-mono text-slate-600">
-                          APAAR: {student.maskedApaarId}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Readiness Gauge & Actions */}
-                    <div className="flex items-center gap-3 self-end sm:self-center">
-                      <div className="text-right hidden sm:block">
-                        <div className="text-xs font-semibold text-slate-900">
-                          {student.readinessScore}%
-                        </div>
-                        <div className="text-[10px] text-slate-400">Readiness</div>
-                      </div>
-
-                      {hasMismatch ? (
-                        <Link
-                          href="/workbench"
-                          className="px-3 py-1.5 rounded-md text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors"
-                        >
-                          {isAuditor
-                            ? 'Inspect Discrepancy'
-                            : isDeptHead
-                            ? 'Review Conflict'
-                            : 'Resolve Conflict'}
-                        </Link>
-                      ) : isRegistrar ? (
-                        <button
-                          onClick={() => setSelectedStudentForPass(student)}
-                          className="px-3 py-1.5 rounded-md text-xs font-medium bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-colors shadow-xs flex items-center gap-1.5"
-                        >
-                          <QrCode className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Issue Proof Pass</span>
-                        </button>
-                      ) : (
-                        <Link
-                          href={`/students/${student.id}`}
-                          className="px-3 py-1.5 rounded-md text-xs font-medium bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 transition-colors shadow-xs"
-                        >
-                          <span>View Record</span>
-                        </Link>
-                      )}
-
-                      <Link
-                        href={`/students/${student.id}`}
-                        className="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                        title="View Full Record"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Seeded Conflict Preview (if present) */}
-                  {hasMismatch && (
-                    <div className="mt-2.5 pt-2 border-t border-amber-200/60 text-xs text-amber-800 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                      <span>
-                        Conflict: <strong>Admission ERP (2004)</strong> vs{' '}
-                        <strong>ABC Feed (2003)</strong>
-                      </span>
-                      <Link
-                        href="/workbench"
-                        className="text-amber-900 hover:underline font-semibold flex items-center gap-1 text-[11px]"
-                      >
-                        Review Evidence in Workbench →
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right Column: Clean Institutional Controls & Audit Stream */}
-        <div className="space-y-6">
-          {/* Proof Pass Design System Card */}
-          <div className="p-5 rounded-lg bg-white border border-slate-200 shadow-subtle space-y-3">
-            <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Shield className="w-4 h-4 text-cobalt-600" />
-              Proof Pass Privacy Architecture
-            </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Institutional staff issues minimal, expiring verification proofs rather than releasing unredacted academic transcripts.
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+              Built for AICTE institutions. When admission SIS, state repositories, and board databases disagree, Zeycb quarantines the conflict, halts automated pass issuance, and requires explicit human staff review before students share selective Proof Passes with external verifiers.
             </p>
-            <div className="space-y-2 text-xs text-slate-600 border-t border-slate-100 pt-3">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Selective Disclosure:</strong> Only verified academic attributes (Degree, Credits) are revealed.
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Explicitly Withheld:</strong> Date of Birth, National ID, and Address stay protected.
-                </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Revocable:</strong> Immediate 1-click invalidation across active links and QR codes.
-                </span>
-              </div>
-            </div>
-          </div>
 
-          {/* Audit Stream Panel */}
-          <div className="p-5 rounded-lg bg-white border border-slate-200 shadow-subtle space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <History className="w-4 h-4 text-slate-500" />
-                Recent Audit Events
-              </h3>
+            {/* Primary Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
               <Link
-                href="/audit"
-                className="text-xs text-cobalt-600 hover:underline font-medium"
+                href="/login"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold transition-all shadow-xs"
               >
-                View all →
+                <LogIn className="w-4 h-4 text-cobalt-300" />
+                <span>Sign in to Demo</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs sm:text-sm font-semibold transition-all shadow-2xs"
+              >
+                <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                <span>Launch Registry</span>
+              </Link>
+
+              <Link
+                href="/trust-trace"
+                className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors"
+              >
+                <span>Trust Trace Lab →</span>
               </Link>
             </div>
 
-            <div className="space-y-2.5">
-              {auditEvents.slice(0, 4).map((evt) => (
+            {/* Three Pillar Cards */}
+            <div className="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5 border-t border-slate-200/80 text-xs text-slate-600">
+              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/70 space-y-0.5">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900 text-[11px]">
+                  <Ban className="w-3 h-3 text-amber-700" />
+                  <span>Never Auto-Resolves</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-tight">
+                  Discrepancies mandate physical ledger confirmation.
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/70 space-y-0.5">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900 text-[11px]">
+                  <EyeOff className="w-3 h-3 text-rose-600" />
+                  <span>Withheld by Default</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-tight">
+                  DOB & national APAAR ID redacted from employer passes.
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/70 space-y-0.5">
+                <div className="flex items-center gap-1.5 font-bold text-slate-900 text-[11px]">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span>Audit Trail</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-tight">
+                  Sequential event log with staff justifications.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: 3D Animated Atlas (7 cols, prominent above fold) */}
+          <div className="lg:col-span-7">
+            <ZeycbAtlasHero />
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 2. FIVE AUDIENCES & THEIR ACTUAL JOBS                                     */}
+      {/* ========================================================================= */}
+      <section id="audiences" className="bg-canvas border-y border-slate-200/80 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="max-w-3xl space-y-2">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cobalt-700">
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>Multi-Stakeholder Governance Model</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-serif">
+              Five Audiences. Five Distinct Responsibilities.
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Zeycb does not use generic permissions. Each stakeholder operates within strict institutional boundaries to safeguard student privacy and establish trustworthy academic provenance.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {fiveAudiences.map((aud, idx) => {
+              const Icon = aud.icon;
+              return (
                 <div
-                  key={evt.id}
-                  className="p-2.5 rounded-md bg-slate-50/80 border border-slate-100 text-xs space-y-1"
+                  key={idx}
+                  className={`rounded-xl bg-white border p-6 flex flex-col justify-between space-y-4 shadow-subtle hover:shadow-card transition-all ${
+                    aud.highlight ? 'border-cobalt-300 ring-1 ring-cobalt-200/60' : 'border-slate-200'
+                  }`}
                 >
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-slate-800">{evt.actor}</span>
-                    <span className="text-slate-400">{formatTimeAgo(evt.timestamp)}</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${aud.iconColor}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                        Persona #{idx + 1}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 font-serif">
+                        {aud.roleTitle}
+                      </h3>
+                      <div className="text-xs text-cobalt-700 font-medium">
+                        {aud.persona}
+                      </div>
+                    </div>
+
+                    <p className="text-xs font-semibold text-slate-800 leading-snug">
+                      {aud.jobSummary}
+                    </p>
+
+                    <p className="text-xs text-slate-600 leading-relaxed pt-2 border-t border-slate-100">
+                      {aud.actionDetail}
+                    </p>
                   </div>
-                  <p className="text-slate-600 text-xs line-clamp-2 leading-relaxed">
-                    {evt.details}
-                  </p>
-                  <div className="flex items-center gap-2 pt-1 text-[10px]">
-                    <span
-                      className={`px-1.5 py-0.2 rounded font-mono ${
-                        evt.status === 'COMPLIANT'
-                          ? 'bg-slate-200 text-slate-700'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}
+
+                  <div className="pt-3 border-t border-slate-100">
+                    <Link
+                      href="/login"
+                      className="w-full inline-flex items-center justify-between text-xs font-semibold text-slate-800 hover:text-cobalt-700 p-1 transition-colors"
                     >
-                      {evt.action}
-                    </span>
-                    <span className="text-slate-400 truncate">{evt.ipAddress}</span>
+                      <span>Sign in as this persona</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
                   </div>
                 </div>
-              ))}
+              );
+            })}
+
+            {/* Sixth card: Honest Boundaries */}
+            <div className="rounded-xl bg-slate-900 text-white border border-slate-950 p-6 flex flex-col justify-between space-y-4 shadow-card">
+              <div className="space-y-3">
+                <div className="w-9 h-9 rounded-lg bg-slate-800 text-cobalt-300 flex items-center justify-center border border-slate-700">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold font-serif">
+                    Honest Research Scope
+                  </h3>
+                  <div className="text-xs text-slate-400 font-mono mt-0.5">
+                    Zero False Security Claims
+                  </div>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Zeycb uses synthetic student cohorts. No live APAAR, ABC, DigiLocker, or Aadhaar servers are contacted. All digital digests are simulated for hackathon evaluation.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800">
+                <Link
+                  href="/login"
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-cobalt-600 hover:bg-cobalt-700 text-white text-xs font-semibold transition-colors"
+                >
+                  <span>Enter via Role Chooser</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Proof Pass Creation Modal */}
-      {selectedStudentForPass && (
-        <ProofPassModal
-          student={selectedStudentForPass}
-          isOpen={Boolean(selectedStudentForPass)}
-          onClose={() => setSelectedStudentForPass(null)}
-        />
-      )}
+      {/* ========================================================================= */}
+      {/* 3. FLAGSHIP TRUST TRACE + THREE SUPPORTING DIFFERENTIATORS                */}
+      {/* ========================================================================= */}
+      <section id="trust-trace" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <TrustTraceSuite />
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. HOW IT WORKS: INSTITUTIONAL PROTOCOL LIFECYCLE                         */}
+      {/* ========================================================================= */}
+      <section id="how-it-works" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="max-w-3xl space-y-2">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cobalt-700">
+            <Database className="w-3.5 h-3.5" />
+            <span>Institutional Lifecycle Protocol</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 font-serif">
+            How Zeycb Reconciles & Protects Academic Records
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            From initial university enrolment to external recruitment verification, every touchpoint maintains provenance while withholding citizen private identifiers.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-subtle space-y-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 font-bold flex items-center justify-center text-xs font-mono">
+              01
+            </div>
+            <h3 className="font-bold text-sm text-slate-900 font-serif">
+              Multi-Source Ingestion
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Records are pulled from Admission SIS, JoSAA allotments, Examination Cell rosters, and National Academic Depository feeds.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-subtle space-y-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-900 font-bold flex items-center justify-center text-xs font-mono">
+              02
+            </div>
+            <h3 className="font-bold text-sm text-slate-900 font-serif">
+              Quarantine & Hold
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              When string distance or date variance is detected, automated credential passes are quarantined. The system never guesses or auto-merges identity data.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-subtle space-y-3">
+            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-900 font-bold flex items-center justify-center text-xs font-mono">
+              03
+            </div>
+            <h3 className="font-bold text-sm text-slate-900 font-serif">
+              Human Staff Sign-Off
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Registrar staff reviews scanned physical Class X certificates or Gazette notifications, attributes the authoritative value, and records the resolution.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-xl bg-white border border-slate-200 shadow-subtle space-y-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 font-bold flex items-center justify-center text-xs font-mono">
+              04
+            </div>
+            <h3 className="font-bold text-sm text-slate-900 font-serif">
+              Selective Proof Passes
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Students authorize time-limited Proof Passes for prospective employers. Academic qualifications are proven while birth dates and national IDs stay protected.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 5. CALL TO ACTION & JUDGES QUICK ACCESS                                  */}
+      {/* ========================================================================= */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-2xl bg-slate-900 text-white p-8 sm:p-12 space-y-6 shadow-card border border-slate-800">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-mono text-cobalt-300">
+              <span>NITAS Northern Regional Deployment • Prototype Demo</span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight font-serif">
+              Ready to evaluate the credential provenance suite?
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Choose an audience persona or launch the institutional registry to explore the mismatch workbench, student self-service records, and selective proof pass generation.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-cobalt-600 hover:bg-cobalt-700 text-white text-xs sm:text-sm font-semibold transition-all shadow-sm"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Sign In to Evaluation Demo</span>
+            </Link>
+
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-semibold transition-all"
+            >
+              <Building2 className="w-4 h-4" />
+              <span>Institutional Overview</span>
+            </Link>
+
+            <Link
+              href="/verify/proof-nitas-9a4f2e"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs sm:text-sm font-semibold transition-all"
+            >
+              <QrCode className="w-4 h-4" />
+              <span>Direct Verifier View</span>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

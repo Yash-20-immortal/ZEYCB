@@ -75,7 +75,7 @@ export default function PassesManagementPage() {
 
         {isRegistrar && (
           <Link
-            href="/"
+            href="/dashboard"
             className="px-3.5 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition-colors shadow-xs shrink-0 self-start sm:self-auto"
           >
             + Issue Pass from Roster

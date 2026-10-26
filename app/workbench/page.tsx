@@ -13,6 +13,8 @@ import {
   QrCode,
   Lock,
   FileCheck2,
+  ChevronRight,
+  UserCheck,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
@@ -25,41 +27,97 @@ export default function MismatchWorkbenchPage() {
   const isDeptHead = activeRole === 'Department Academic Head';
   const isRegistrar = activeRole === 'Registrar Office (Staff #RO-402)';
 
-  // Find Priya Sharma
-  const priya = students.find((s) => s.id === 'stu-001') || students[0];
-  const mismatch = priya.seededMismatch;
+  // All students with seeded conflicts
+  const conflictStudents = students.filter((s) => s.seededMismatch);
+
+  // Default to Priya Sharma (stu-001) flagship story
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('stu-001');
+
+  const currentStudent =
+    students.find((s) => s.id === selectedStudentId) ||
+    students.find((s) => s.id === 'stu-001') ||
+    students[0];
+
+  const mismatch = currentStudent.seededMismatch;
 
   const [selectedSource, setSelectedSource] = useState<'SIS' | 'ABC' | 'CUSTOM'>('SIS');
-  const [customName, setCustomName] = useState(priya.fullName.value);
-  const [customDob, setCustomDob] = useState(priya.dateOfBirth.value);
+  const [customName, setCustomName] = useState(currentStudent.fullName.value);
+  const [customDob, setCustomDob] = useState(currentStudent.dateOfBirth.value);
   const [reasonNote, setReasonNote] = useState(
     'Verified against physical CBSE Matriculation Certificate #82190 on institutional file. Name confirmed as Priya Sharma, DOB confirmed as 15-Aug-2004. ABC mock feed middle name variance flagged as unverified pre-enrollment draft.'
   );
-  const [evidenceRef, setEvidenceRef] = useState('CBSE-DEL-2020-82190 (Physical Ledger CS-22-084)');
+  const [evidenceRef, setEvidenceRef] = useState(
+    'CBSE-DEL-2020-82190 (Physical Ledger CS-22-084)'
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showProofModal, setShowProofModal] = useState(false);
 
   const isResolved = mismatch?.resolved;
 
+  const handleSelectStudent = (sId: string) => {
+    setSelectedStudentId(sId);
+    setSelectedSource('SIS');
+    const target = students.find((s) => s.id === sId);
+    if (target) {
+      setCustomName(target.fullName.value);
+      setCustomDob(target.dateOfBirth.value);
+      if (sId === 'stu-001') {
+        setReasonNote(
+          'Verified against physical CBSE Matriculation Certificate #82190 on institutional file. Name confirmed as Priya Sharma, DOB confirmed as 15-Aug-2004.'
+        );
+        setEvidenceRef('CBSE-DEL-2020-82190 (Physical Ledger CS-22-084)');
+      } else if (sId === 'stu-005') {
+        setReasonNote(
+          'Reconciled patronymic initial "N." against MSBSHSE Marksheet #091482. Authorized legal spelling retained as Aarav Narayan Kulkarni.'
+        );
+        setEvidenceRef('MSBSHSE-2020-091482 (Physical Ledger CS-22-012)');
+      } else if (sId === 'stu-009') {
+        setReasonNote(
+          'Grade Moderation Committee minutes approved credit recognition for CS-308. Re-synchronized ABC ledger to 116 credits.'
+        );
+        setEvidenceRef('NITAS/GMC/2024/CS-308 (COE Tabulation Sheet)');
+      } else {
+        setReasonNote(
+          `Reconciled against institutional ledger for ${target.fullName.value}. Evidence confirmed.`
+        );
+        setEvidenceRef(target.seededMismatch?.supportingDocument || 'INSTITUTIONAL-SIS-LEDGER');
+      }
+    }
+  };
+
   const handleResolve = () => {
     setIsSubmitting(true);
-    let chosenName = priya.fullName.value;
-    let chosenDob = priya.dateOfBirth.value;
+    let chosenName = currentStudent.fullName.value;
+    let chosenDob = currentStudent.dateOfBirth.value;
 
-    if (selectedSource === 'SIS') {
-      chosenName = 'Priya Sharma';
-      chosenDob = '2004-08-15';
-    } else if (selectedSource === 'ABC') {
-      chosenName = 'Priya Kumari Sharma';
-      chosenDob = '2003-08-15';
+    if (currentStudent.id === 'stu-001') {
+      if (selectedSource === 'SIS') {
+        chosenName = 'Priya Sharma';
+        chosenDob = '2004-08-15';
+      } else if (selectedSource === 'ABC') {
+        chosenName = 'Priya Kumari Sharma';
+        chosenDob = '2003-08-15';
+      } else {
+        chosenName = customName;
+        chosenDob = customDob;
+      }
+    } else if (currentStudent.id === 'stu-005') {
+      if (selectedSource === 'SIS') {
+        chosenName = 'Aarav N. Kulkarni';
+      } else if (selectedSource === 'ABC') {
+        chosenName = 'Aarav Narayan Kulkarni';
+      } else {
+        chosenName = customName;
+      }
+      chosenDob = currentStudent.dateOfBirth.value;
     } else {
-      chosenName = customName;
-      chosenDob = customDob;
+      chosenName = selectedSource === 'CUSTOM' ? customName : currentStudent.fullName.value;
+      chosenDob = selectedSource === 'CUSTOM' ? customDob : currentStudent.dateOfBirth.value;
     }
 
     setTimeout(() => {
       resolveMismatch(
-        priya.id,
+        currentStudent.id,
         selectedSource,
         chosenName,
         chosenDob,
@@ -78,21 +136,21 @@ export default function MismatchWorkbenchPage() {
           <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
             <span className="font-medium text-slate-700">Source Provenance Investigation</span>
             <span>•</span>
-            <span className="font-mono">Case #DISC-2024-001</span>
+            <span className="font-mono">Case #{currentStudent.id.toUpperCase()}-DISC</span>
             <span>•</span>
-            <span>Roll: {priya.rollNumber}</span>
+            <span>Roll: {currentStudent.rollNumber}</span>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 font-serif">
-            Mismatch Workbench: {priya.fullName.value}
+            Mismatch Workbench: {currentStudent.fullName.value}
           </h1>
           <p className="text-xs text-slate-600 mt-1">
-            Resolve source data conflicts between Institutional Admissions Records and National Depository (Simulated).
+            Resolve source data conflicts between Institutional Admissions Records and National Depository Feeds (Simulated).
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <Link
-            href={`/students/${priya.id}`}
+            href={`/students/${currentStudent.id}`}
             className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 transition-colors shadow-xs"
           >
             Student Record Detail
@@ -106,6 +164,44 @@ export default function MismatchWorkbenchPage() {
               <span>Issue Proof Pass</span>
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Case Switcher Tabs */}
+      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-slate-600 shrink-0">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+          <span className="font-semibold text-slate-900">Flagged Cases ({conflictStudents.length}):</span>
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+          {conflictStudents.map((cs) => {
+            const isSel = cs.id === currentStudent.id;
+            const isCaseResolved = cs.seededMismatch?.resolved;
+            return (
+              <button
+                key={cs.id}
+                type="button"
+                onClick={() => handleSelectStudent(cs.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  isSel
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <span>{cs.fullName.value}</span>
+                {cs.id === 'stu-001' && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${isSel ? 'bg-amber-400 text-slate-950' : 'bg-amber-100 text-amber-900'}`}>
+                    Flagship
+                  </span>
+                )}
+                {isCaseResolved ? (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                ) : (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -125,7 +221,8 @@ export default function MismatchWorkbenchPage() {
               </div>
               <p className="text-xs text-emerald-900/90 leading-relaxed">
                 Resolved by <strong>{mismatch?.resolvedBy}</strong> on{' '}
-                {formatDate(mismatch?.resolvedAt || '')}. Authoritative Name: <em>Priya Sharma</em>, DOB: <em>15-Aug-2004</em>.
+                {formatDate(mismatch?.resolvedAt || '')}. Authoritative Value:{' '}
+                <em>{currentStudent.fullName.value}</em>.
               </p>
               <p className="text-[11px] text-emerald-800/80 italic">
                 Note: &quot;{mismatch?.resolutionNote}&quot;
@@ -138,7 +235,7 @@ export default function MismatchWorkbenchPage() {
               onClick={() => setShowProofModal(true)}
               className="px-3.5 py-2 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-medium shrink-0 transition-colors shadow-xs"
             >
-              Issue Proof Pass for Priya
+              Issue Proof Pass for {currentStudent.fullName.value.split(' ')[0]}
             </button>
           )}
         </div>
@@ -179,28 +276,24 @@ export default function MismatchWorkbenchPage() {
           <div className="mt-4 space-y-3 text-xs">
             <div className="p-3 rounded-md bg-slate-50 border border-slate-100 space-y-0.5">
               <span className="text-[11px] text-slate-500 block font-medium">
-                Recorded Legal Name
+                Recorded Local Value
               </span>
-              <p className="text-sm font-semibold text-slate-900">Priya Sharma</p>
-              <p className="text-[11px] text-emerald-700">Corroborated by Class X Certificate</p>
-            </div>
-
-            <div className="p-3 rounded-md bg-slate-50 border border-slate-100 space-y-0.5">
-              <span className="text-[11px] text-slate-500 block font-medium">
-                Recorded Date of Birth
-              </span>
-              <p className="text-sm font-semibold text-slate-900">15 August 2004</p>
-              <p className="text-[11px] text-slate-500">Physical folder: CS-22-084 / CBSE-82190</p>
+              <p className="text-sm font-semibold text-slate-900">
+                {mismatch?.localValue || currentStudent.fullName.value}
+              </p>
+              <p className="text-[11px] text-emerald-700">
+                Source: {mismatch?.localSource || 'Institutional Admission Ledger'}
+              </p>
             </div>
 
             <div className="space-y-1.5 text-xs text-slate-500 pt-2 border-t border-slate-100">
               <div className="flex justify-between">
-                <span>Ingest Date:</span>
-                <span className="text-slate-700 font-medium">12-Aug-2022 (JoSAA 2022 Round 1)</span>
+                <span>Student ID / Roll:</span>
+                <span className="text-slate-700 font-mono font-medium">{currentStudent.rollNumber}</span>
               </div>
               <div className="flex justify-between">
-                <span>Attributed Officer:</span>
-                <span className="text-slate-700 font-medium">NITAS Admissions (Staff #ADM-109)</span>
+                <span>Department:</span>
+                <span className="text-slate-700 font-medium">{currentStudent.department}</span>
               </div>
               <div className="flex justify-between">
                 <span>Verification Type:</span>
@@ -252,32 +345,30 @@ export default function MismatchWorkbenchPage() {
           <div className="mt-4 space-y-3 text-xs">
             <div className="p-3 rounded-md bg-amber-50/50 border border-amber-200/60 space-y-0.5">
               <span className="text-[11px] text-slate-500 block font-medium">
-                Recorded Legal Name
+                Incoming Ingest Value
               </span>
-              <p className="text-sm font-semibold text-amber-900">Priya Kumari Sharma</p>
-              <p className="text-[11px] text-amber-700">Middle name string variance detected</p>
-            </div>
-
-            <div className="p-3 rounded-md bg-amber-50/50 border border-amber-200/60 space-y-0.5">
-              <span className="text-[11px] text-slate-500 block font-medium">
-                Recorded Date of Birth
-              </span>
-              <p className="text-sm font-semibold text-rose-700">15 August 2003</p>
-              <p className="text-[11px] text-rose-600">1-year offset with admission record</p>
+              <p className="text-sm font-semibold text-amber-900">
+                {mismatch?.incomingValue || currentStudent.fullName.alternateValue || 'Conflicting Ingest Data'}
+              </p>
+              <p className="text-[11px] text-amber-700">
+                Source: {mismatch?.incomingSource || 'National Academic Depository Feed'}
+              </p>
             </div>
 
             <div className="space-y-1.5 text-xs text-slate-500 pt-2 border-t border-slate-100">
               <div className="flex justify-between">
-                <span>Sync Date:</span>
-                <span className="text-slate-700 font-medium">14-Oct-2024 (Batch Sync #7482)</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Feed Identifier:</span>
-                <span className="text-slate-700 font-mono">ABC-AP-839210498921</span>
+                <span>Ingest Feed Ref:</span>
+                <span className="text-slate-700 font-mono">
+                  {currentStudent.fullName.alternateSource?.recordRef || `ABC-FEED-${currentStudent.id.toUpperCase()}`}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Ingest Disposition:</span>
                 <span className="text-amber-800 font-medium">Automated Merge Paused</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Synthetic APAAR:</span>
+                <span className="text-slate-700 font-mono">{currentStudent.maskedApaarId}</span>
               </div>
             </div>
 
@@ -300,7 +391,7 @@ export default function MismatchWorkbenchPage() {
         </div>
       </div>
 
-      {/* AI Decision Support Panel (Clean Slate) */}
+      {/* AI Decision Support Panel */}
       <div className="p-5 rounded-lg bg-white border border-slate-200 shadow-subtle space-y-3">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
@@ -338,7 +429,7 @@ export default function MismatchWorkbenchPage() {
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 text-xs">
           <span className="font-semibold text-slate-900 flex items-center gap-2">
             <FileCheck2 className="w-4 h-4 text-emerald-600" />
-            Physical Ledger Supporting Evidence
+            Institutional Ledger Supporting Evidence
           </span>
           <span className="text-emerald-700 font-mono text-xs font-medium">
             Physical File Scrutiny Completed
@@ -347,24 +438,20 @@ export default function MismatchWorkbenchPage() {
 
         <div className="p-3.5 rounded-md bg-slate-50 border border-slate-100 text-xs space-y-1.5">
           <div className="flex justify-between">
-            <span className="text-slate-500">Document Name:</span>
+            <span className="text-slate-500">Document / Record:</span>
             <span className="text-slate-900 font-medium">
-              CBSE All India Secondary School Examination Certificate 2020
+              {mismatch?.supportingDocument || 'Physical Admission File & Marksheet Copy'}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500">Certificate Reference:</span>
-            <span className="font-mono text-slate-900 font-medium">CBSE/DEL/2020/82190</span>
+            <span className="text-slate-500">Candidate Target:</span>
+            <span className="font-mono text-slate-900 font-medium">{currentStudent.fullName.value} ({currentStudent.rollNumber})</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-500">Physical Vault Location:</span>
             <span className="text-slate-700">
-              NITAS Registrar Vault • Admission Cabinet CS-22, Folder 084
+              NITAS Registrar Vault • Admission Cabinet {currentStudent.department.slice(0, 3).toUpperCase()}-22, Folder {currentStudent.rollNumber.split('-')[2] || '084'}
             </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-500">Date of Birth on Certificate:</span>
-            <span className="text-emerald-700 font-semibold">15-Aug-2004 (Confirms Institutional SIS)</span>
           </div>
         </div>
       </div>
@@ -383,8 +470,8 @@ export default function MismatchWorkbenchPage() {
               Auditor / Compliance Inspector persona operates with strictly read-only inspection access. Discrepancy reconciliation and record mutation authority are reserved for institutional staff (Registrar Office and Department Head).
             </p>
             <div className="text-xs text-slate-500 pt-2 border-t border-slate-100 flex items-center justify-between">
-              <span>Audited Record: {priya.fullName.value} ({priya.rollNumber})</span>
-              <span className="font-mono text-slate-400">Case #DISC-2024-001</span>
+              <span>Audited Record: {currentStudent.fullName.value} ({currentStudent.rollNumber})</span>
+              <span className="font-mono text-slate-400">Case #{currentStudent.id.toUpperCase()}-DISC</span>
             </div>
           </div>
         ) : (
@@ -442,58 +529,43 @@ export default function MismatchWorkbenchPage() {
                 </div>
               </div>
 
-            <div className="p-3 rounded-md bg-slate-50 border border-slate-100 flex items-center gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <div className="text-xs text-slate-700 leading-snug">
-                Reconciliation will set Authoritative Name to{' '}
-                <strong className="text-slate-900">
-                  {selectedSource === 'SIS'
-                    ? 'Priya Sharma'
-                    : selectedSource === 'ABC'
-                    ? 'Priya Kumari Sharma'
-                    : customName}
-                </strong>{' '}
-                and DOB to{' '}
-                <strong className="text-slate-900">
-                  {selectedSource === 'SIS'
-                    ? '15-Aug-2004'
-                    : selectedSource === 'ABC'
-                    ? '15-Aug-2003'
-                    : customDob}
-                </strong>
-                . Student readiness will update to 98%.
+              <div className="p-3 rounded-md bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="text-xs text-slate-700 leading-snug">
+                  Reconciliation will approve authoritative record for{' '}
+                  <strong className="text-slate-900">{currentStudent.fullName.value}</strong>. Student readiness score will be updated to 98% and state marked as verified.
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <Link
+                  href="/dashboard"
+                  className="px-3.5 py-2 text-xs font-medium text-slate-600 hover:text-slate-900"
+                >
+                  Cancel
+                </Link>
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={handleResolve}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-xs"
+                >
+                  {isSubmitting ? (
+                    <span>Recording Resolution...</span>
+                  ) : (
+                    <span>Approve Resolution & Update Record</span>
+                  )}
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <Link
-                href="/"
-                className="px-3.5 py-2 text-xs font-medium text-slate-600 hover:text-slate-900"
-              >
-                Cancel
-              </Link>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleResolve}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-xs"
-              >
-                {isSubmitting ? (
-                  <span>Sealing Record...</span>
-                ) : (
-                  <span>Approve Resolution & Seal Record</span>
-                )}
-              </button>
-            </div>
           </div>
-        </div>
-      )
-    )}
+        )
+      )}
 
       {/* Proof Pass Modal Launcher */}
       {showProofModal && (
         <ProofPassModal
-          student={priya}
+          student={currentStudent}
           isOpen={showProofModal}
           onClose={() => setShowProofModal(false)}
         />

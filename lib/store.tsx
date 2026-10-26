@@ -5,6 +5,7 @@ import { StudentRecord, ProofPass, AuditEvent, InstitutionProfile } from './type
 import { INSTITUTION, INITIAL_STUDENTS, INITIAL_PROOF_PASSES, INITIAL_AUDIT_EVENTS } from './mock-data';
 
 export type UserRole =
+  | 'Student (Credential Holder)'
   | 'Registrar Office (Staff #RO-402)'
   | 'Department Academic Head'
   | 'Auditor / Compliance Inspector'
@@ -53,7 +54,7 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | null>(null);
 
-const STORAGE_KEY = 'zeycb_prototype_state_v1';
+const STORAGE_KEY = 'zeycb_prototype_state_v3';
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [students, setStudents] = useState<StudentRecord[]>(INITIAL_STUDENTS);
@@ -111,8 +112,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [students, proofPasses, auditEvents, activeRole, isHydrated]);
 
   const logAuditEvent = (eventData: Omit<AuditEvent, 'id' | 'timestamp' | 'actor' | 'actorRole' | 'ipAddress'>) => {
-    let actorName = activeRole;
-    if (activeRole.includes('Registrar')) {
+    let actorName: string = activeRole;
+    if (activeRole === 'Student (Credential Holder)') {
+      actorName = 'Priya Sharma (Student #2022-CSE-084)';
+    } else if (activeRole.includes('Registrar')) {
       actorName = 'Dr. Anirudh Sen (Deputy Registrar, Staff #RO-402)';
     } else if (activeRole === 'Department Academic Head') {
       actorName = 'Prof. Rajesh Verma (Head, Computer Science & Engineering)';
@@ -127,7 +130,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       timestamp: new Date().toISOString(),
       actor: actorName,
       actorRole: activeRole,
-      ipAddress: activeRole === 'External Verifier' ? '198.51.100.89 (Simulated External Gateway IP)' : '10.20.4.12 (Simulated Intranet IP)',
+      ipAddress: activeRole === 'External Verifier' ? '198.51.100.89 (Simulated External Gateway IP)' : activeRole === 'Student (Credential Holder)' ? '172.16.88.42 (Campus WiFi Client IP)' : '10.20.4.12 (Simulated Intranet IP)',
       ...eventData,
     };
     setAuditEvents((prev) => [newEvent, ...prev]);
@@ -178,7 +181,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             status: 'manual_verified',
             provenance: {
               ...student.fullName.provenance,
-              sourceName: `Reconciled & Sealed by ${staffActor} (${supportingEvidenceRef})`,
+              sourceName: `Reconciled by ${staffActor} (${supportingEvidenceRef})`,
               confidence: 100,
               lastSynced: resolvedTime,
             },
@@ -331,12 +334,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       sharedFields: params.selectedFields,
       fieldValues,
       withheldFields: [
-        'Full National APAAR ID (Masked: ' + student.maskedApaarId + ')',
+        'Synthetic National APAAR ID (Masked: ' + student.maskedApaarId + ')',
         'Date of Birth & Age (Data minimization principle)',
-        'Aadhaar / National Identity Reference (Strictly Withheld)',
-        'Personal Residential Address & Domicile',
+        'Synthetic Aadhaar Reference (Strictly Withheld; Placeholders Only)',
+        'Personal Residential Address & Domicile (Fictional)',
         'Parent / Guardian Personal Contact Information',
-        'Mobile Phone Number & Personal Email Address',
+        'Mobile Phone Number & Personal Email Address (Synthetic Placeholders)',
         'Caste / Category / Financial Assistance Classification',
       ],
       simulatedSignature: {

@@ -106,10 +106,10 @@ export default function VerifierPage() {
             </span>
             {!isExternalVerifier && (
               <Link
-                href="/"
+                href="/dashboard"
                 className="text-xs text-slate-600 hover:text-slate-900 font-medium"
               >
-                ← Institute App
+                ← Institute Dashboard
               </Link>
             )}
           </div>
@@ -160,10 +160,10 @@ export default function VerifierPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-semibold text-emerald-950">
-                    SIMULATED PROOF SEALED & VALID
+                    SIMULATED PROOF RECORDED & VALID
                   </h2>
                   <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                    AUTHENTICATED
+                    RECORD VERIFIED
                   </span>
                 </div>
                 <p className="text-xs text-emerald-800/90 mt-0.5">
